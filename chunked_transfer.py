@@ -79,8 +79,8 @@ with information from the APIs Console
 # Retry transport and file IO errors.
 RETRYABLE_ERRORS = (httplib2.HttpLib2Error, IOError)
 
-# A collection of non-recoverable status codes.
-NON_RETRYABLE_CODES = (500, 502, 503, 504)
+# Number of times to retry failed downloads.
+NUM_RETRIES = 5
 
 # Number of bytes to send/receive in each request.
 CHUNKSIZE = 2 * 1024 * 1024
@@ -94,7 +94,7 @@ def get_authenticated_service(scope):
   flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=scope,
                                  message=MISSING_CLIENT_SECRETS_MESSAGE)
 
-  credential_storage = CredentialStorage('credentials.json')
+  credential_storage = CredentialStorage(CREDENTIALS_FILE)
   credentials = credential_storage.get()
   if credentials is None or credentials.invalid:
     credentials = run_oauth2(flow, credential_storage)
@@ -104,8 +104,8 @@ def get_authenticated_service(scope):
   return discovery_build('storage', 'v1beta1', http=http)
 
 
-def handle_progressless_iter(error, progressless_iters, num_retries):
-  if progressless_iters > num_retries:
+def handle_progressless_iter(error, progressless_iters):
+  if progressless_iters > NUM_RETRIES:
     print 'Failed to make progress for too many consecutive iterations.'
     raise error
 
@@ -123,6 +123,7 @@ def print_with_carriage_return(s):
 def upload(argv):
   filename = argv[1]
   bucket_name, object_name = argv[2][5:].split('/', 1)
+  assert bucket_name and object_name
 
   service = get_authenticated_service(RW_SCOPE)
 
@@ -139,24 +140,24 @@ def upload(argv):
   progressless_iters = 0
   response = None
   while response is None:
+    error = None
     try:
-      error = None
       progress, response = request.next_chunk()
       if progress:
         print_with_carriage_return('Upload %d%%' % (100 * progress.progress()))
-      progressless_iters = 0
     except HttpError, err:
       error = err
-      if err.resp.status not in NON_RETRYABLE_CODES:
+      if err.resp.status < 500:
         raise
     except RETRYABLE_ERRORS, err:
       error = err
 
-    if error is not None:
+    if error:
       progressless_iters += 1
-      handle_progressless_iter(error, progressless_iters, num_retries)
+      handle_progressless_iter(error, progressless_iters)
     else:
       progressless_iters = 0
+
   print '\nUpload complete!'
 
   print 'Uploaded Object:'
@@ -166,6 +167,7 @@ def upload(argv):
 def download(argv):
   bucket_name, object_name = argv[1][5:].split('/', 1)
   filename = argv[2]
+  assert bucket_name and object_name
 
   service = get_authenticated_service(RO_SCOPE)
 
@@ -182,22 +184,22 @@ def download(argv):
   progressless_iters = 0
   done = False
   while not done:
+    error = None
     try:
-      error = None
       progress, done = media.next_chunk()
       if progress:
-        print_with_carriage_return('Download %d%%.'
-                                % int(progress.progress() * 100))
+        print_with_carriage_return(
+            'Download %d%%.' % int(progress.progress() * 100))
     except HttpError, err:
       error = err
-      if err.resp.status not in NON_RETRYABLE_CODES:
+      if err.resp.status < 500:
         raise
     except RETRYABLE_ERRORS, err:
       error = err
 
-    if error is not None:
+    if error:
       progressless_iters += 1
-      handle_progressless_iter(error, progressless_iters, num_retries)
+      handle_progressless_iter(error, progressless_iters)
     else:
       progressless_iters = 0
 
