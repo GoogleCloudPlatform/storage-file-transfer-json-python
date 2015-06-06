@@ -101,7 +101,7 @@ def get_authenticated_service(scope):
 
   print 'Constructing Google Cloud Storage service...'
   http = credentials.authorize(httplib2.Http())
-  return discovery_build('storage', 'v1beta1', http=http)
+  return discovery_build('storage', 'v1', http=http)
 
 
 def handle_progressless_iter(error, progressless_iters):
