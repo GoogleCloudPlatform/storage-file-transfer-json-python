@@ -36,7 +36,7 @@ from apiclient.http import MediaIoBaseDownload
 from json import dumps as json_dumps
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage as CredentialStorage
-from oauth2client.tools import run as run_oauth2
+from oauth2client.tools import run_flow as run_oauth2
 
 
 # CLIENT_SECRETS_FILE, name of a file containing the OAuth 2.0 information for
