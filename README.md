@@ -1,7 +1,7 @@
-storage-file-tranfer-json-python
+storage-file-transfer-json-python
 ================================
 
-Uploads and downloads files between Google Cloud Storage and the local filesystem using the Google Python Client Library.Uploads and downloads files between Google Cloud Storage and the local
+Uploads and downloads files between Google Cloud Storage and the local filesystem using the Google Python Client Library. Uploads and downloads files between Google Cloud Storage and the local
 filesystem using the Google APIs Python Client Library.
 
 api: storage
@@ -23,7 +23,7 @@ SETUP:
   granted permission, the script creates a credentials.json file, which stores
   the access and refresh tokens acquired from the OAuth flow.
 
-USAGE:
+**USAGE**:
   This script uploads and downloads files in chunks between Google Cloud
   Storage and your local filesystem. It accepts two arguments: a file path and
   a Cloud Storage resource name in "gs://<bucket>/<object>" format. The order
